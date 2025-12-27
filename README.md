@@ -3,7 +3,7 @@
 Deutsch
 ------
 
-Vorschau: Soon
+Vorschau: https://streamable.com/30n1hq
 
 Kurz: Dieses kleine Script fügt Schneeeffekte und Schneebälle hinzu und verbessert optional die Fahrzeug-Traktion bei Schneewetter (`XMAS`).
 
@@ -30,7 +30,7 @@ Hinweise
 English
 -------
 
-preview: soon
+preview: https://streamable.com/30n1hq
 
 Short: This small script adds snow effects and snowballs and optionally improves vehicle traction during snow weather (`XMAS`).
 
