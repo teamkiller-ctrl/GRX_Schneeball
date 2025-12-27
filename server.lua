@@ -55,7 +55,6 @@ if Config.MeltEnabled then
                                 if cur ~= nil then
                                     if Config.Debug then print(('schneeball: player %s slot %s (%s) durability %s'):format(playerId, tostring(k), tostring(slot.slot), tostring(cur))) end
                                     local newDur = cur - (Config.MeltAmount or 10)
-                                    -- notify at 50% when crossing the threshold
                                     if cur > (Config.StartDurability / 2) and newDur <= (Config.StartDurability / 2) then
                                         TriggerClientEvent('schneeball:clientNotify', playerId, 'Dein Schneeball ist zur Hälfte geschmolzen')
                                     end
