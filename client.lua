@@ -120,7 +120,6 @@ Citizen.CreateThread(function()
             ReleaseNamedScriptAudioBank("SNOW_FOOTSTEPS")
             SetForceVehicleTrails(false)
             SetForcePedFootstepsTracks(false)
-            -- restore handling for any vehicles we changed
             for veh,_ in pairs(snowHandledVehicles) do
                 resetSnowGrip(veh)
             end
