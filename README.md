@@ -1,5 +1,7 @@
 # GRX_Schneeball
 
+# Vorschau: Soon
+
 Deutsch
 ------
 
@@ -27,6 +29,8 @@ Hinweise
 
 English
 -------
+
+# preview: soon
 
 Short: This small script adds snow effects and snowballs and optionally improves vehicle traction during snow weather (`XMAS`).
 
