@@ -18,3 +18,7 @@ shared_scripts {
     'config.lua'
 }
 
+dependencies {
+    'ox_lib',
+    'es_extended',
+}
