@@ -1,6 +1,8 @@
 Config = {}
+Config.Version = '1.0'
 
 Config.ESX = true
+
 
 Config.Damage = 0.0
 
@@ -16,6 +18,7 @@ Config.SnowHandling = {
 	LowSpeedTractionLossMultiplier = 0.85,
 }
 
+-- Snowman crafting / spawn config
 Config.Snowman = {
 	Props = {
 		'xm3_prop_xm3_snowman_01a',
