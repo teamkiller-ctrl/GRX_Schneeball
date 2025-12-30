@@ -3,7 +3,7 @@ fx_version 'cerulean'
 game 'gta5'
 
 author 'TeamKillerPaul'
-description 'Schneeball - Snowball throwing mini-game with durability and weather effects'
+description 'Schneeball — Minispiel mit Schneeeffekten, werfbaren Schneebällen, Haltbarkeit und witterungsabhängigen Fahrzeugeffekten'
 version '1.0'
 
 client_scripts {
@@ -20,5 +20,6 @@ shared_scripts {
 
 dependencies {
     'ox_lib',
-    'es_extended',
+	'es_extended',
+	'ox_inventory',
 }
