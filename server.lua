@@ -198,3 +198,36 @@ RegisterNetEvent('schneeball:mark_destroyed', function(data)
     end
     saveSaved()
 end)
+
+-- Version checker: prüft GitHub Releases (teamkiller-ctrl/GRX_Schneeball)
+local function checkForUpdate()
+    local repoApi = 'https://api.github.com/repos/teamkiller-ctrl/GRX_Schneeball/releases/latest'
+    PerformHttpRequest(repoApi, function(statusCode, response, headers)
+        if statusCode == 200 and response then
+            local ok, data = pcall(function() return json.decode(response) end)
+            if ok and type(data) == 'table' then
+                local latest = data.tag_name or data.name
+                if latest then
+                    local current = Config.Version or '0.0'
+                    if tostring(latest) ~= tostring(current) then
+                        print(('schneeball: update available — local=%s latest=%s'):format(current, latest))
+                        TriggerClientEvent('schneeball:clientNotify', -1, 'Schneeball: Neue Version verfügbar ('..tostring(latest)..')')
+                    else
+                        if Config.Debug then print(('schneeball: up-to-date (%s)'):format(current)) end
+                    end
+                end
+            end
+        else
+            if Config.Debug then print(('schneeball: update check failed, status %s'):format(tostring(statusCode))) end
+        end
+    end, 'GET', '', { ['User-Agent'] = 'FiveM-Schneeball-VersionCheck' })
+end
+
+CreateThread(function()
+    Wait(5000)
+    pcall(checkForUpdate)
+    while true do
+        Wait(6 * 60 * 60 * 1000)
+        pcall(checkForUpdate)
+    end
+end)
