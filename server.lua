@@ -210,7 +210,8 @@ local function checkForUpdate()
                     local current = Config.Version or '0.0'
                     if tostring(latest) ~= tostring(current) then
                         print(('schneeball: update available — local=%s latest=%s'):format(current, latest))
-                        TriggerClientEvent('schneeball:clientNotify', -1, 'Schneeball: Neue Version verfügbar ('..tostring(latest)..')')
+                        local download_link = data.html_url or data.zipball_url or (data.assets and data.assets[1] and data.assets[1].browser_download_url) or 'https://github.com/teamkiller-ctrl/GRX_Schneeball/releases'
+                        print(('schneeball: Neue Version verfügbar (%s) — Download: %s'):format(tostring(latest), tostring(download_link)))
                     else
                         if Config.Debug then print(('schneeball: up-to-date (%s)'):format(current)) end
                     end
