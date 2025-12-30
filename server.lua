@@ -199,7 +199,6 @@ RegisterNetEvent('schneeball:mark_destroyed', function(data)
     saveSaved()
 end)
 
--- Version checker: prüft GitHub Releases (teamkiller-ctrl/GRX_Schneeball)
 local function checkForUpdate()
     local repoApi = 'https://api.github.com/repos/teamkiller-ctrl/GRX_Schneeball/releases/latest'
     PerformHttpRequest(repoApi, function(statusCode, response, headers)
@@ -215,10 +214,14 @@ local function checkForUpdate()
                     else
                         if Config.Debug then print(('schneeball: up-to-date (%s)'):format(current)) end
                     end
+                else
+                    print('schneeball: no tag_name or name found in the GitHub API response')
                 end
+            else
+                print('schneeball: failed to parse GitHub response')
             end
         else
-            if Config.Debug then print(('schneeball: update check failed, status %s'):format(tostring(statusCode))) end
+            print(('schneeball: update check failed, status %s'):format(tostring(statusCode)))
         end
     end, 'GET', '', { ['User-Agent'] = 'FiveM-Schneeball-VersionCheck' })
 end
