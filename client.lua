@@ -135,3 +135,84 @@ RegisterNetEvent('schneeball:clientNotify', function(msg)
         showNotify(msg)
     end
 end)
+
+RegisterNetEvent('schneeball:attempt_build', function()
+    showNotify('Versuche Schneemann herzustellen...')
+    RequestAnimDict('amb@world_human_gardener_plant@male@enter')
+    while not HasAnimDictLoaded('amb@world_human_gardener_plant@male@enter') do Citizen.Wait(0) end
+    TaskStartScenarioInPlace(PlayerPedId(), 'WORLD_HUMAN_AA_SMOKE', 0, true)
+    Citizen.Wait(2000)
+    ClearPedTasks(PlayerPedId())
+    -- Perform 5 easy skillchecks (uses lib.skillCheck / ox_lib if available, falls back otherwise)
+    local rounds = 5
+    for i = 1, rounds do
+        local ok = callSkillCheck({'easy', 'easy', 'easy'}, {'e'})
+        if not ok then
+            showNotify(('Skillcheck fehlgeschlagen (%d/%d)'):format(i, rounds))
+            return
+        end
+        Citizen.Wait(200)
+    end
+    showNotify('Alle Skillchecks bestanden! Baue Schneemann...')
+    TriggerServerEvent('schneeball:complete_build')
+end)
+
+local spawnedSnowmen = {}
+
+RegisterNetEvent('schneeball:spawn_snowman', function()
+    local ped = PlayerPedId()
+    local pos = GetEntityCoords(ped)
+    local forward = GetEntityForwardVector(ped)
+    local spawnPos = vector3(pos.x + forward.x * 1.5, pos.y + forward.y * 1.5, pos.z)
+
+    local props = Config.Snowman and Config.Snowman.Props or {'xm3_prop_xm3_snowman_01a','xm3_prop_xm3_snowman_01b','xm3_prop_xm3_snowman_01c'}
+    local propName = props[math.random(1, #props)]
+    local model = GetHashKey(propName)
+
+    RequestModel(model)
+    local tries = 0
+    while not HasModelLoaded(model) and tries < 100 do
+        Citizen.Wait(10)
+        tries = tries + 1
+    end
+    if not HasModelLoaded(model) then
+        showNotify('Fehler: Prop konnte nicht geladen werden')
+        return
+    end
+
+    local obj = CreateObject(model, spawnPos.x, spawnPos.y, spawnPos.z, true, true, false)
+    PlaceObjectOnGroundProperly(obj)
+    SetEntityHeading(obj, GetEntityHeading(ped))
+    Citizen.Wait(50)
+    spawnedSnowmen[#spawnedSnowmen+1] = obj
+    showNotify('Du hast einen Schneemann gebaut!')
+end)
+
+Citizen.CreateThread(function()
+    while true do
+        local wait = Config.Snowman and Config.Snowman.CheckInterval or 700
+        Citizen.Wait(wait)
+        if #spawnedSnowmen == 0 then goto cont end
+        for i = #spawnedSnowmen,1,-1 do
+            local obj = spawnedSnowmen[i]
+            if not obj or not DoesEntityExist(obj) then
+                table.remove(spawnedSnowmen, i)
+            else
+                local objCoords = GetEntityCoords(obj)
+                local veh = GetClosestVehicle(objCoords.x, objCoords.y, objCoords.z, 3.5, 0, 70)
+                if veh and veh ~= 0 and DoesEntityExist(veh) then
+                    local speed = GetEntitySpeed(veh)
+                    local breakSpeed = Config.Snowman and Config.Snowman.BreakSpeed or 4.0
+                    local dist = #(objCoords - GetEntityCoords(veh))
+                    if speed >= breakSpeed and dist <= 3.5 then
+                        UseParticleFxAssetNextCall('core_snow')
+                        StartParticleFxNonLoopedAtCoord('ent_ray_impact_snow', objCoords.x, objCoords.y, objCoords.z + 0.3, 0.0, 0.0, 0.0, 1.0, false, false, false)
+                        DeleteObject(obj)
+                        table.remove(spawnedSnowmen, i)
+                    end
+                end
+            end
+        end
+        ::cont::
+    end
+end)
