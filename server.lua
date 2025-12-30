@@ -15,7 +15,7 @@ RegisterNetEvent('snowballs:add-item', function()
 
     if exports ~= nil and exports.ox_inventory ~= nil then
         local ok, res = pcall(function()
-            return exports.ox_inventory:AddItem(src, 'snowball', 1, {durability = Config.StartDurability})
+            return exports.ox_inventory:AddItem(src, 'WEAPON_SNOWBALL', 1, {durability = Config.StartDurability})
         end)
         if not ok then
             print('schneeball: failed to add item via ox_inventory', res)
@@ -23,6 +23,63 @@ RegisterNetEvent('snowballs:add-item', function()
     else
         print('schneeball: no supported inventory found to add item')
     end
+end)
+
+-- Usable item (ESX): right-click/use the snowball to attempt building a snowman
+if Config.ESX and ESX then
+    ESX.RegisterUsableItem('WEAPON_SNOWBALL', function(source)
+        TriggerClientEvent('schneeball:attempt_build', source)
+    end)
+end
+
+-- Generic server event that client or inventory UI can call to attempt building a snowman
+RegisterNetEvent('schneeball:try_build', function()
+    local src = source
+    -- Immediately spawn a snowman for the caller; no items required or removed
+    TriggerClientEvent('schneeball:spawn_snowman', src)
+end)
+
+-- Finalize build: remove 5 snowballs (if available) and spawn the snowman for the player
+RegisterNetEvent('schneeball:complete_build', function()
+    local src = source
+    local needed = 5
+
+    -- ESX handling
+    if Config.ESX and ESX then
+        local xPlayer = ESX.GetPlayerFromId(src)
+        if not xPlayer then return end
+        local count_weapon = xPlayer.getInventoryItem('WEAPON_SNOWBALL') and xPlayer.getInventoryItem('WEAPON_SNOWBALL').count or 0
+        if count_weapon >= needed then
+            xPlayer.removeInventoryItem('WEAPON_SNOWBALL', needed)
+            TriggerClientEvent('schneeball:spawn_snowman', src)
+        else
+            TriggerClientEvent('schneeball:clientNotify', src, 'Du brauchst '..needed..' Schneebälle um einen Schneemann zu bauen')
+        end
+        return
+    end
+
+    -- ox_inventory handling
+    if exports ~= nil and exports.ox_inventory ~= nil then
+        local okW, resW = pcall(function()
+            return exports.ox_inventory:GetItemCount(src, 'WEAPON_SNOWBALL')
+        end)
+        if okW and type(resW) == 'number' and resW >= needed then
+            local ok2, res2 = pcall(function()
+                return exports.ox_inventory:RemoveItem(src, 'WEAPON_SNOWBALL', needed)
+            end)
+            if ok2 then
+                TriggerClientEvent('schneeball:spawn_snowman', src)
+            else
+                TriggerClientEvent('schneeball:clientNotify', src, 'Fehler beim Entfernen der Schneebälle')
+            end
+        else
+            TriggerClientEvent('schneeball:clientNotify', src, 'Du brauchst '..needed..' Schneebälle um einen Schneemann zu bauen')
+        end
+        return
+    end
+
+    -- Fallback: no inventory system
+    TriggerClientEvent('schneeball:clientNotify', src, 'Kein Inventarsystem gefunden, Schneemann kann nicht gebaut werden')
 end)
 
 if Config.MeltEnabled then
@@ -40,7 +97,7 @@ if Config.MeltEnabled then
                     goto continue_player
                 end
 
-                local itemNames = {'snowball', 'WEAPON_SNOWBALL'}
+                local itemNames = {'WEAPON_SNOWBALL'}
                 for _, itemName in ipairs(itemNames) do
                     local ok, slots = pcall(function()
                         return exports.ox_inventory:GetSlotsWithItem(playerId, itemName)
@@ -85,3 +142,59 @@ if Config.MeltEnabled then
     end)
 end
 
+local savedFile = 'saved_snowmen.json'
+local savedSnowmen = {}
+
+local function loadSaved()
+    local data = LoadResourceFile(GetCurrentResourceName(), savedFile)
+    if data and data ~= '' then
+        local ok, parsed = pcall(function() return json.decode(data) end)
+        if ok and type(parsed) == 'table' then
+            savedSnowmen = parsed
+        else
+            savedSnowmen = {}
+        end
+    else
+        savedSnowmen = {}
+    end
+end
+
+local function saveSaved()
+    local ok, err = pcall(function()
+        SaveResourceFile(GetCurrentResourceName(), savedFile, json.encode(savedSnowmen), -1)
+    end)
+    if not ok then print('schneeball: failed to save saved_snowmen.json', err) end
+end
+
+loadSaved()
+
+RegisterNetEvent('schneeball:request_saved', function()
+    local src = source
+    local toSend = {}
+    for _, v in ipairs(savedSnowmen) do
+        if not v.destroyed then table.insert(toSend, v) end
+    end
+    TriggerClientEvent('schneeball:load_saved_snowmen', src, toSend)
+end)
+
+RegisterNetEvent('schneeball:register_snowman', function(data)
+    if not data or type(data) ~= 'table' then return end
+    data.destroyed = false
+    table.insert(savedSnowmen, data)
+    saveSaved()
+end)
+
+RegisterNetEvent('schneeball:mark_destroyed', function(data)
+    if not data or type(data) ~= 'table' then return end
+    for _, v in ipairs(savedSnowmen) do
+        if v.model == data.model then
+            local dx = (v.x or 0) - (data.x or 0)
+            local dy = (v.y or 0) - (data.y or 0)
+            local dz = (v.z or 0) - (data.z or 0)
+            if (dx*dx + dy*dy + dz*dz) <= 1.0 then
+                v.destroyed = true
+            end
+        end
+    end
+    saveSaved()
+end)
